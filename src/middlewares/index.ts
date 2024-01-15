@@ -1,4 +1,4 @@
-import validarJWT from "./validar-jwt";
+import validarJWT from "./valid-jwt";
 
 export default {
   ...validarJWT,

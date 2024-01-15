@@ -10,7 +10,7 @@ const db = new Sequelize(nameDB, userDB, PasswordDB, {
   timezone: "-05:00",
 });
 
-//db.sync({ alter: false, force: false });
-db.authenticate({ logging: true });
+db.sync({ force: true });
+// db.authenticate({ logging: true });
 
 export default db;

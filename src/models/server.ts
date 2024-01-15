@@ -55,7 +55,6 @@ class Server {
   }
   /* eslint-disable @typescript-eslint/no-var-requires */
   routes() {
-    console.log(ApiPaths);
     ApiPaths.forEach(({ url, router }) =>
       this.app.use(`/api${url}`, require(`../router/${router}`))
     );

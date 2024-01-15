@@ -38,7 +38,7 @@ const createEmail = async <A extends object>(
 
 /** parametriza el correo que será enviado */
 // eslint-disable-next-line @typescript-eslint/ban-types
-const enviarEmailPersonalizado = async <R extends object>(
+const sendCustomEmail = async <R extends object>(
   subject: string,
   destinatario: string[],
   file: string,
@@ -68,4 +68,4 @@ const enviarEmailPersonalizado = async <R extends object>(
   }
 };
 
-export default { enviarEmailPersonalizado };
+export default sendCustomEmail;
