@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recuperar cuenta</title>
+    <style type="text/css">
+      /*Edición de todos los div*/
+      div {
+        text-align: center;
+      }
+
+      div .kabil-logo-container img {
+        width: 100%;
+        height: 40%;
+      }
+
+      div .logo img {
+        width: 30%;
+      }
+
+      /*Edición en div del Titulo*/
+      div #titulo-correo h1 {
+        font-size: 30px;
+        color: #0c343d;
+      }
+
+      /*Edición en div del texto 1*/
+      div #texto-1-correo p {
+        font-size: 20px;
+      }
+
+      div #texto-2-correo {
+        font-size: 13px;
+        color: gray;
+        padding-bottom: 20px;
+      }
+
+      /*Edición en div del botón verificar*/
+      div #boton-verificar button {
+        width: 200px;
+        height: 40px;
+        background-color: #032f3c;
+        border-radius: 30px;
+      }
+
+      /*Edición del botón verificar*/
+      .boton {
+        text-decoration: none;
+        color: white;
+        display: inline;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        background: none;
+        font-size: 1em;
+        line-height: 1em;
+      }
+
+      /*Edición del botón verificar hover*/
+      .boton:hover {
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      div #boton-verificar button:hover {
+        background-color: #1b4a61;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div style="font-family: Sans-serif">
+      <section id="">
+        <div class="kabil-logo-container">
+          <img
+            src="https://app.lacasadelmaestro.co/imagenes_correos/banner-certika-email.png"
+            alt="kabil-logo"
+          />
+        </div>
+      </section>
+      <section id="">
+        <div id="titulo-correo">
+          <h1>Recupera tu cuenta</h1>
+        </div>
+
+        <div id="texto-1-correo">
+          <p>
+            Está recibiendo este mensaje porque usted ha solicitado restablecer
+            la contraseña de su cuenta.<br />
+            Accede al siguiente enlace para completar el proceso.
+          </p>
+        </div>
+
+        <div id="boton-verificar">
+          <a class="boton" href="{{verificationLink}}" target="_blank"
+            ><button class="boton">Link de recuperación</button></a
+          >
+        </div>
+      </section>
+      <footer>
+        <div class="kabil-logo-container">
+          <img
+            src="https://app.lacasadelmaestro.co/imagenes_correos/footer_br.png"
+            alt="kabil-logo"
+          />
+        </div>
+        <div class="logo">
+          <img
+            src="https://app.lacasadelmaestro.co/imagenes_correos/La_Casa_del_Maestro_Color_400x120.png"
+            width="300"
+            alt="kabil-logo"
+          />
+        </div>
+        <div id="texto-2-correo">
+          <p>Casa del Maestro © 2022. Todos los derechos reservados</p>
+          <a href="mailto:casadelmaestro@cuc.edu.co"
+            >casadelmaestro@cuc.edu.co</a
+          >
+        </div>
+        <div class="">
+          <a href="https://mobile.twitter.com/LaCasadelMaest2"
+            ><img
+              src="https://app.lacasadelmaestro.co/imagenes_correos/Twitter.png"
+              width="50"
+              alt="kabil-logo"
+          /></a>
+          <a href="https://www.instagram.com/lacasadelmaestrobq/"
+            ><img
+              src="https://app.lacasadelmaestro.co/imagenes_correos/Instagram.png"
+              width="50"
+              alt="kabil-logo"
+          /></a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

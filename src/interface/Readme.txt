@@ -1,0 +1,1 @@
+Esta carpeta es para exportar el tipado de las variables, funciones etc
