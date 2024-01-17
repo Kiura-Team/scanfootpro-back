@@ -9,3 +9,7 @@ export interface SignUpBody {
   name: string;
   id?: number;
 }
+
+export interface RecoveryPasswordBody {
+  email: string;
+}

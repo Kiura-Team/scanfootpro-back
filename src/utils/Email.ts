@@ -28,7 +28,7 @@ const createEmail = async <A extends object>(
           return reject(err);
         } else {
           const template = handlebars.compile(html);
-          const htmlToSend = template({ info });
+          const htmlToSend = template({ ...info });
           return resolve(htmlToSend);
         }
       }

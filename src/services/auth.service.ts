@@ -1,4 +1,8 @@
-import { LoginBody, SignUpBody } from "./../interface/auth.interface";
+import {
+  LoginBody,
+  RecoveryPasswordBody,
+  SignUpBody,
+} from "./../interface/auth.interface";
 import { Request, Response } from "express";
 import { HelperBody } from "../helpers";
 import { UserModel, VerificationCodeModel } from "../models";
@@ -14,11 +18,12 @@ import { randomNumber } from "../utils/numberManager";
 import sendCustomEmail from "../utils/Email";
 import { Model } from "sequelize";
 import { UserModelI } from "../interface/user.interface";
+import { asyncVerify } from "../utils/jwtMannager";
 
 //helpers
 const { checkBody, validRegexBody } = HelperBody;
 //Variables de entorno
-const { secret, urlBack } = Config;
+const { secret, urlBack, urlFront } = Config;
 
 const signIn = async (req: Request, res: Response) => {
   try {
@@ -60,6 +65,7 @@ const signIn = async (req: Request, res: Response) => {
     delete user.dataValues.password;
     delete user.dataValues.email_verified;
     delete user.dataValues.createdAt;
+    delete user.dataValues.status;
 
     res.json({ token, user });
   } catch (error) {
@@ -128,8 +134,8 @@ const signUp = async (req: Request, res: Response) => {
       [email],
       "../../assets/emails/recoverEmail.html",
       {
-        fullName: name,
-        verifyLink: `${urlBack}/api/auth/verify_email?token=${tokenVerificationCode}`,
+        user_name: name,
+        activateLink: `${urlBack}/api/auth/verify_email?token=${tokenVerificationCode}`,
       }
     );
 
@@ -143,4 +149,74 @@ const signUp = async (req: Request, res: Response) => {
   }
 };
 
-export default { signIn, signUp };
+const verifyEmail = async (req: Request, res: Response) => {
+  const transaction = await db.transaction();
+  try {
+    const { token } = req.query;
+    //Verificamos si el token existe
+    if (!token)
+      return res
+        .status(400)
+        .json({ msg: "No se envió el token de verificación" });
+
+    //desencriptamos el token
+    const decode: string | jwt.JwtPayload =
+      (await asyncVerify(String(token), secret)) || "";
+
+    const user: any = await UserModel.findOne({
+      where: { email: decode.email },
+    });
+
+    if (!user) return res.status(404).json({ msg: "Usuario no encontrado" });
+
+    if (user.email_verified)
+      return res.status(400).json({ msg: "Usuario ya está verificado" });
+
+    const emailVerificationCode: any = await VerificationCodeModel.findOne({
+      where: { user_id: user.id },
+    });
+
+    if (
+      !emailVerificationCode ||
+      emailVerificationCode.code !== decode.verificationCode
+    ) {
+      return res.status(400).json({ msg: "Error de verificación" });
+    }
+
+    //cambiamos el valor de la verificacion para verificar el usuario
+    user.email_verified = true;
+    await user.save({ transaction });
+
+    //enviamos correo
+    await sendCustomEmail(
+      "!Cuenta verificada! 👍",
+      [user.email],
+      "../../assets/emails/activateEmail.html",
+      {
+        activateLink: `${urlFront}/login`,
+      }
+    );
+
+    await transaction.commit();
+    res.json({ msg: "¡Usuario verificado!" });
+  } catch (error) {
+    res.status(500).json({ msg: "Error interno" });
+  }
+};
+
+const recoveryPassword = async (req: Request, res: Response) => {
+  const transaction = await db.transaction();
+  try {
+    const body: RecoveryPasswordBody = req.body;
+
+    const user: any = await UserModel.findOne({
+      where: { email: body.email },
+    });
+
+    console.log(user?.password);
+  } catch (error) {
+    res.status(500).json({ msg: "Error Interno" });
+  }
+};
+
+export default { signIn, signUp, verifyEmail, recoveryPassword };
