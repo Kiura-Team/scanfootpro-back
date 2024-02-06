@@ -5,7 +5,11 @@ import {
 } from "./../interface/auth.interface";
 import { Request, Response } from "express";
 import { HelperBody } from "../helpers";
-import { UserModel, VerificationCodeModel } from "../models";
+import {
+  PasswordCodesModel,
+  UserModel,
+  VerificationCodeModel,
+} from "../models";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import Config from "../config";
@@ -16,8 +20,6 @@ import {
 import db from "../db/connection";
 import { randomNumber } from "../utils/numberManager";
 import sendCustomEmail from "../utils/Email";
-import { Model } from "sequelize";
-import { UserModelI } from "../interface/user.interface";
 import { asyncVerify } from "../utils/jwtMannager";
 
 //helpers
@@ -135,7 +137,7 @@ const signUp = async (req: Request, res: Response) => {
       "../../assets/emails/recoverEmail.html",
       {
         user_name: name,
-        activateLink: `${urlBack}/api/auth/verify_email?token=${tokenVerificationCode}`,
+        activateLink: `${urlBack}/auth/verify_email?token=${tokenVerificationCode}`,
       }
     );
 
@@ -207,16 +209,154 @@ const verifyEmail = async (req: Request, res: Response) => {
 const recoveryPassword = async (req: Request, res: Response) => {
   const transaction = await db.transaction();
   try {
-    const body: RecoveryPasswordBody = req.body;
+    const { email }: RecoveryPasswordBody = req.body;
+
+    if (!email) return res.status(400).json({ msg: "¡El email es requerido!" });
 
     const user: any = await UserModel.findOne({
-      where: { email: body.email },
+      where: { email: email, status: true },
     });
 
-    console.log(user?.password);
+    if (!user)
+      return res
+        .status(404)
+        .json({ msg: "Usuario no encontrado o desactivado" });
+
+    //Extraemos todos los codigos asociados al cliente y que estén en un status verdadero
+    const codes: any = await PasswordCodesModel.findAll({
+      where: { user_id: user.id, status: true },
+    });
+
+    //Si encontramos mas codigos
+    if (codes.length > 0) {
+      codes.forEach(async (code: any, index: number) => {
+        code.status = false;
+        await code.save({ transaction });
+      });
+    }
+
+    const codesUsers: Array<any> = await PasswordCodesModel.findAll({
+      limit: 1,
+    });
+    const body: any = {
+      code: generateVerificationCode(4),
+      user_id: user.id,
+    };
+
+    if (codesUsers.length === 0) body["id"] = randomNumber(4);
+    const new_code: any = await PasswordCodesModel.create(body, {
+      transaction,
+    });
+
+    //enviamos correo de verificación
+    await sendCustomEmail(
+      "Cambio de contraseña",
+      [email],
+      "../../assets/emails/codePassword.html",
+      {
+        user_name: user.name,
+        code: new_code.code,
+      }
+    );
+
+    await transaction.commit();
+    res.status(200).json({ msg: "Mail enviado con exito" });
   } catch (error) {
+    await transaction.rollback();
     res.status(500).json({ msg: "Error Interno" });
   }
 };
 
-export default { signIn, signUp, verifyEmail, recoveryPassword };
+const verifyCodePassword = async (req: Request, res: Response) => {
+  try {
+    const { email, code }: RecoveryPasswordBody = req.body;
+
+    //Si no encontramos el email o el codigo
+    if (!email || !code)
+      return res
+        .status(400)
+        .json({ msg: "El email y el codigo son requeridos!" });
+
+    const user: any = await UserModel.findOne({
+      where: { email: email.toLocaleLowerCase(), status: true },
+    });
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ msg: "Usuario no encontrado o desactivado" });
+
+    const codePasword: any = await PasswordCodesModel.findOne({
+      where: { user_id: user.id, code: code.toUpperCase() },
+    });
+
+    if (!codePasword)
+      return res.status(404).json({ mgs: "No se encontró el codigo" });
+
+    if (!codePasword.status)
+      return res.status(404).json({ mgs: "Codigo vencido" });
+
+    res.status(200).json({ msg: "Ya puede cambiar su contraseña" });
+  } catch (error) {
+    res.status(500).json({ msg: "Error interno" });
+  }
+};
+
+const changePassword = async (req: Request, res: Response) => {
+  const transaction = await db.transaction();
+  try {
+    const { email, code, password }: RecoveryPasswordBody = req.body;
+
+    //requerido contraseña, codigo e email
+    if (!email || !code || !password)
+      return res.status(400).json({ msg: "Se requieren todos los campos!" });
+
+    const user: any = await UserModel.findOne({
+      where: { email: email.toLocaleLowerCase(), status: true },
+    });
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ msg: "Usuario no encontrado o desactivado" });
+
+    const codePasword: any = await PasswordCodesModel.findOne({
+      where: { user_id: user.id, code: code.toUpperCase() },
+    });
+
+    if (!codePasword)
+      return res.status(404).json({ mgs: "No se encontró el codigo" });
+
+    if (!codePasword.status)
+      return res.status(404).json({ mgs: "Codigo vencido" });
+
+    //Validamos el formato del body
+    const valid = validRegexBody(
+      { password },
+      { password: "^(?=.{8,})(?=.*[A-Z])(?=.*[0-9])" }
+    );
+
+    if (valid) return res.status(403).json({ msg: valid });
+
+    const newPassword = await bcrypt.hash(password, 10);
+
+    user.password = newPassword;
+    codePasword.status = false;
+    await user.save({ transaction });
+    await codePasword.save({ transaction });
+
+    await transaction.commit();
+    res.status(200).json({ msg: "Se cambió la contraseña exitosamente" });
+  } catch (error) {
+    res.status(500).json({ msg: "Error interno" });
+  }
+};
+
+export default {
+  signIn,
+  signUp,
+  verifyEmail,
+  recoveryPassword,
+  verifyCodePassword,
+  changePassword,
+};

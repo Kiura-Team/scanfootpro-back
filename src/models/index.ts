@@ -2,3 +2,4 @@
 //Ej: export { default as ParametersModel } from "./parametros.model";
 export { default as UserModel } from "./users.model";
 export { default as VerificationCodeModel } from "./emailVerificationCodes.model";
+export { default as PasswordCodesModel } from "./passwordRecoveruCodes.model";

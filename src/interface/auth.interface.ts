@@ -12,4 +12,6 @@ export interface SignUpBody {
 
 export interface RecoveryPasswordBody {
   email: string;
+  code?: string;
+  password?: string;
 }
